@@ -210,10 +210,14 @@ export function findControllers(callback: (controllers: NsSwitchHID[]) => void) 
     let deviceList = new Set();
 
     const work = () => {
-        const tempDeviceList = new Set();
         const devices = findDevices().reduce((prev, d) => {
-            if (getType(d.product) !== 'unknown') {
-                prev.push(new NsSwitchHID(d));
+            const distinctId = `${d.vendorId},${d.productId},${getType(d.product)}`;
+            if (!deviceList.has(distinctId) && getType(d.product) !== 'unknown') {
+                try {
+                    prev.push(new NsSwitchHID(d));
+                } catch (e) {
+                    console.error(e);
+                }
             }
 
             return prev;
@@ -221,14 +225,12 @@ export function findControllers(callback: (controllers: NsSwitchHID[]) => void) 
 
         devices.forEach((d) => {
             const distinctId = `${d.meta.vendorId},${d.meta.productId},${d.meta.type}`;
-            tempDeviceList.add(distinctId);
-
             if (!deviceList.has(distinctId)) {
                 callback(devices);
             }
+            deviceList.add(distinctId);
         });
 
-        deviceList = tempDeviceList;
     };
 
     work();
